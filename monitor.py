@@ -1,5 +1,7 @@
+import datetime
 import json
 import logging
+from logging.handlers import RotatingFileHandler
 
 import dotenv
 import requests
@@ -11,10 +13,10 @@ logging.basicConfig(
     format='%(asctime)s [%(levelname)s] %(message)s Data: %(args)s',
     handlers=[
          logging.StreamHandler(),
-        logging.FileHandler('logs/app.log'),
+        RotatingFileHandler("logs/app.log", maxBytes=10000, backupCount=10)
+
     ],
 )
-
 
 dotenv.load_dotenv()
 
@@ -26,47 +28,54 @@ headers = {
 }
 timeout=5
 
+now = datetime.datetime.now().strftime('%Y%m%d')
+
+#Ne pas afficher le token
+token = API_TOKEN
+hide = token.replace(token, '***')
+
 def fast_api():
     try:
-        #Ne pas afficher le token
-        token = API_TOKEN
-        hide = token.replace(token, '***')
 
         response = requests.get(f'{API_URL}',
                                 headers=headers,
                                 timeout=timeout)
 
-        # json save
+        #Json save
 
         result = response.json()
 
-        data = "result.json"
+        data = f'{now}-result.json'
 
-        dossier = "reports"
+        file = "reports"
 
-        os.makedirs(dossier, exist_ok=True)
+        os.makedirs(file, exist_ok=True)
 
-        route = os.path.join(dossier, data)
+        route = os.path.join(file, data)
 
         # Sauvegarde des données en format JSON
         with open(route, 'w', encoding='utf-8') as f:
-            json.dump(result, f, indent=4, ensure_ascii=False)
+            json.dump(result, f, indent=4)
 
-        print(f"Résultats sauvegardés dans le dossier {route}")
+        print(f"Results saved in folder {route}")
 
         logging.info(f'HTTP response from {API_URL},{hide} with status code {response.status_code}')
         response.raise_for_status()
         if 500 < response.status_code <= 599:
-            raise Exception(f'Erreur {response.status_code} sur l\'API {response.reason}')
+            raise Exception(f'Error {response.status_code} in API {response.reason}')
 
         if 400 < response.status_code <= 499:
-            raise Exception(f'Erreur {response.status_code} sur l\'API {response.reason}')
+            raise Exception(f'Error {response.status_code} in API {response.reason}')
 
         return response
     except requests.exceptions.HTTPError as e:
         logging.error(f'HTTP error: {hide}')
+        return e
+    except requests.exceptions.RequestException as e:
+        logging.error(f'Network error on {API_URL}, {hide}')
+        return e
     except Exception as e:
         logging.error(e.args[0])
-        return 'Erreur sur l\'API'
+        return 'Error in API'
 
 print(fast_api())
