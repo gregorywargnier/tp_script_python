@@ -1,5 +1,5 @@
 import subprocess
-
+import sys
 
 
 def run_bandit():
@@ -20,5 +20,18 @@ def run_bandit():
         print("Erreur : Bandit n'est pas installé. Veuillez l'installer via 'pip install bandit'.")
 
 
+def run_audit():
+    print("Lancement de l'analyse statique avec Audit..")
+    try:
+        subprocess.check_call(["pip-audit"])
+        print("audit ok !")
+    except subprocess.CalledProcessError as e:
+        print("des vulnérabilités ont été détectées ")
+        sys.exit(e.returncode)
 
-print(run_bandit())
+
+def main():
+    run_audit()
+    run_bandit()
+if __name__ == "__main__":
+    main()
