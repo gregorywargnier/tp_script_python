@@ -3,10 +3,12 @@ import json
 import logging
 from logging.handlers import RotatingFileHandler
 
+
 import dotenv
 import requests
 import os
 
+from db import create_tables
 
 logging.basicConfig(
     level=logging.INFO,
@@ -78,4 +80,10 @@ def fast_api():
         logging.error(e.args[0])
         return 'Error in API'
 
-print(fast_api())
+
+def main():
+    create_tables()
+    fast_api()
+if __name__ == "__main__":
+    main()
+
